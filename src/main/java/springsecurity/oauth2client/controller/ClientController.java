@@ -1,4 +1,4 @@
-package springsecurity.oauth2client;
+package springsecurity.oauth2client.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;

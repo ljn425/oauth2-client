@@ -1,4 +1,4 @@
-package springsecurity.oauth2client;
+package springsecurity.oauth2client.controller;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
