@@ -3,33 +3,23 @@ package springsecurity.oauth2client;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
-import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestResolver;
 import org.springframework.security.web.SecurityFilterChain;
 
 @EnableWebSecurity
 @Configuration
 @RequiredArgsConstructor
 public class OAuth2ClientConfig {
-
-    private final ClientRegistrationRepository clientRegistrationRepository;
-
     @Bean
     SecurityFilterChain oauth2SecurityFilterChain(HttpSecurity http) throws Exception {
         http.authorizeRequests(requests -> requests
-                .antMatchers("/home").permitAll()
+                .antMatchers("/home", "/client").permitAll()
                 .anyRequest().authenticated());
-        http.oauth2Login(authLogin -> authLogin.authorizationEndpoint(
-                authEndpoint -> authEndpoint.authorizationRequestResolver(customOAuthorizationRequestResolver())
-        ));
+//        http.oauth2Login(Customizer.withDefaults()); //클라이언트 인증 및 최종 사용자까지 인증처리하는 API
+        http.oauth2Client(Customizer.withDefaults()); // 클라이언트의 인증만 처리하는 API, 최종 사용자 인증 X
         http.logout(logout -> logout.logoutSuccessUrl("/home"));
-
         return http.build();
-    }
-
-    private OAuth2AuthorizationRequestResolver customOAuthorizationRequestResolver() {
-        return new CustomOAuth2AuthorizationRequestResolver(clientRegistrationRepository, "/oauth2/authorization");
     }
 }

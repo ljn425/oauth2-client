@@ -6,36 +6,14 @@ spring:
     oauth2:
       client:
         registration:
-          keycloak1:
+          keycloak:
             client-id: oauth2-client-app
             client-secret: diPtMOfy4jAJgivXLRDX1lXYgk1MAK7q
-            redirect-uri: http://localhost:8081/login/oauth2/code/keycloak # redirectURI ??? {baseUrl}/login/oauth2/code/{registrationId
+            redirect-uri: http://localhost:8081/client
             client-name: oauth2-client-app
             authorization-grant-type: authorization_code
-            client-authentication-method: client_secret_basic # base64? ???? client_id:client_secret ? authorization header ? ??
+            client-authentication-method: client_secret_basic
             scope: openid, profile
-            provider: keycloak
-
-          keycloakWithPKCE:
-            client-id: oauth2-client-app2
-#            client-secret: PL7pti3QPcDOCsOgqllF2bhWVFMy2aSB
-            redirect-uri: http://localhost:8081/login/oauth2/code/keycloak # redirectURI ??? {baseUrl}/login/oauth2/code/{registrationId
-            client-name: oauth2-client-app2
-            authorization-grant-type: authorization_code
-#            client-authentication-method: client_secret_basic
-            client-authentication-method: none
-            scope: openid, profile
-            provider: keycloak
-
-          keycloak2:
-            client-id: oauth2-client-app3
-            client-secret: yLAdccU51qxFYYzjNA7KiSe0P7QaXCoN
-            redirect-uri: http://localhost:8081/home # redirectURI ??? {baseUrl}/login/oauth2/code/{registrationId
-            client-name: oauth2-client-app3
-            authorization-grant-type: implicit
-            client-authentication-method: none
-            scope: openid, profile
-            provider: keycloak
 
         provider:
           keycloak:
