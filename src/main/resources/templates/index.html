@@ -20,7 +20,10 @@
   <p><input type="button" onclick="authorizationCode()" value="AuthorizationCode Grant" />
   <div sec:authorize="isAnonymous()">
     <a th:href="@{/oauth2Login(username='user', password='1111')}">Password Flow</a>
-</div>
+  </div>
+  <div sec:authorize="isAnonymous()">
+    <a th:href="@{/oauth2Login}">Client Credentials Flow</a>
+  </div>
 </form>
 </body>
 </html>

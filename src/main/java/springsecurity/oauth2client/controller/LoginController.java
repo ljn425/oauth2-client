@@ -54,26 +54,28 @@ public class LoginController {
         // 인증 요청 객체를 이용해서 권한부여 클라이언트 매니저를 이용해서 권한부여 클라이언트 가져오기
         OAuth2AuthorizedClient authorizedClient = authorizedClientManager.authorize(authorizeRequest);
 
-        if(authorizedClient != null) { // 인증객체가 존재하면 최종사용자 인증 처리
-            OAuth2UserRequest oAuth2UserRequest = new OAuth2UserRequest( // 최종사용자 인증 요청 객체 만들기
-                    authorizedClient.getClientRegistration(),
-                    authorizedClient.getAccessToken()
-            );
-
-            OAuth2UserService<OAuth2UserRequest, OAuth2User> oAuth2UserService = new DefaultOAuth2UserService();
-            OAuth2User oAuth2User = oAuth2UserService.loadUser(oAuth2UserRequest); // 인가서버에서 최종사용자 정보 가져오기
-
-            SimpleAuthorityMapper authorityMapper = new SimpleAuthorityMapper();
-            authorityMapper.setPrefix("SYSTEM_"); // 권한부여 클라이언트에서 가져온 권한에 SYSTEM_ 접두어 붙이기
-            Set<GrantedAuthority> grantedAuthorities = authorityMapper.mapAuthorities(oAuth2User.getAuthorities()); // 최종사용자 권한 가져오기
-
-            OAuth2AuthenticationToken oAuth2AuthenticationToken =
-                    new OAuth2AuthenticationToken(oAuth2User, grantedAuthorities, authorizedClient.getClientRegistration().getRegistrationId());// 최종사용자 인증객체 만들기
-
-            SecurityContextHolder.getContext().setAuthentication(oAuth2AuthenticationToken); // 최종사용자 인증객체 저장하기
-
-            model.addAttribute("oAuth2AuthenticationToken", oAuth2AuthenticationToken);
-        }
+//        if(authorizedClient != null) { // 인증객체가 존재하면 최종사용자 인증 처리
+//            OAuth2UserRequest oAuth2UserRequest = new OAuth2UserRequest( // 최종사용자 인증 요청 객체 만들기
+//                    authorizedClient.getClientRegistration(),
+//                    authorizedClient.getAccessToken()
+//            );
+//
+//            OAuth2UserService<OAuth2UserRequest, OAuth2User> oAuth2UserService = new DefaultOAuth2UserService();
+//            OAuth2User oAuth2User = oAuth2UserService.loadUser(oAuth2UserRequest); // 인가서버에서 최종사용자 정보 가져오기
+//
+//            SimpleAuthorityMapper authorityMapper = new SimpleAuthorityMapper();
+//            authorityMapper.setPrefix("SYSTEM_"); // 권한부여 클라이언트에서 가져온 권한에 SYSTEM_ 접두어 붙이기
+//            Set<GrantedAuthority> grantedAuthorities = authorityMapper.mapAuthorities(oAuth2User.getAuthorities()); // 최종사용자 권한 가져오기
+//
+//            OAuth2AuthenticationToken oAuth2AuthenticationToken =
+//                    new OAuth2AuthenticationToken(oAuth2User, grantedAuthorities, authorizedClient.getClientRegistration().getRegistrationId());// 최종사용자 인증객체 만들기
+//
+//            SecurityContextHolder.getContext().setAuthentication(oAuth2AuthenticationToken); // 최종사용자 인증객체 저장하기
+//
+//            model.addAttribute("oAuth2AuthenticationToken", oAuth2AuthenticationToken);
+//        }
+        if (authorizedClient != null)
+            model.addAttribute("oAuth2AuthenticationToken", authorizedClient.getAccessToken().getTokenValue());
 
         return "home";
     }
