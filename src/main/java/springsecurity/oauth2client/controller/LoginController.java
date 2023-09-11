@@ -1,22 +1,16 @@
 package springsecurity.oauth2client.controller;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.aop.interceptor.AsyncUncaughtExceptionHandler;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.mapping.SimpleAuthorityMapper;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.client.OAuth2AuthorizationSuccessHandler;
 import org.springframework.security.oauth2.client.OAuth2AuthorizeRequest;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
-import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager;
-import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
-import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
-import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
-import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
+import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.client.web.DefaultOAuth2AuthorizedClientManager;
 import org.springframework.security.oauth2.client.web.OAuth2AuthorizedClientRepository;
-import org.springframework.security.oauth2.core.user.OAuth2User;
+import org.springframework.security.oauth2.core.AuthorizationGrantType;
+import org.springframework.security.oauth2.core.OAuth2AccessToken;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -24,7 +18,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.util.Set;
+import java.time.Clock;
+import java.time.Duration;
 
 @Controller
 @RequiredArgsConstructor
@@ -32,6 +27,8 @@ public class LoginController {
 
     private final DefaultOAuth2AuthorizedClientManager authorizedClientManager; // 권한부여 클라이언트 매니저
     private final OAuth2AuthorizedClientRepository authorizedClientRepository; // 권한부여 클라이언트 저장소
+    private Duration clockSkew = Duration.ofSeconds(3600);
+    private Clock clock = Clock.systemUTC();
 
     @GetMapping("/oauth2Login")
     public String oauth2Login(HttpServletRequest request, HttpServletResponse response, Model model) {
@@ -54,30 +51,47 @@ public class LoginController {
         // 인증 요청 객체를 이용해서 권한부여 클라이언트 매니저를 이용해서 권한부여 클라이언트 가져오기
         OAuth2AuthorizedClient authorizedClient = authorizedClientManager.authorize(authorizeRequest);
 
-//        if(authorizedClient != null) { // 인증객체가 존재하면 최종사용자 인증 처리
-//            OAuth2UserRequest oAuth2UserRequest = new OAuth2UserRequest( // 최종사용자 인증 요청 객체 만들기
-//                    authorizedClient.getClientRegistration(),
-//                    authorizedClient.getAccessToken()
-//            );
+        // 권한부여 타입을 변경하지 않고 실행
+        if(authorizedClient != null && hasTokenExpired(authorizedClient.getAccessToken()) && authorizedClient.getRefreshToken() != null) {
+            authorizedClientManager.authorize(authorizeRequest);
+        }
+
+        // 권한부여 타입을 직접 변경하고 실행
+//        if(authorizedClient != null && hasTokenExpired(authorizedClient.getAccessToken()) && authorizedClient.getRefreshToken() != null) {
 //
-//            OAuth2UserService<OAuth2UserRequest, OAuth2User> oAuth2UserService = new DefaultOAuth2UserService();
-//            OAuth2User oAuth2User = oAuth2UserService.loadUser(oAuth2UserRequest); // 인가서버에서 최종사용자 정보 가져오기
+//            ClientRegistration clientRegistration = ClientRegistration
+//                    .withClientRegistration(authorizedClient.getClientRegistration())
+//                    .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN) // 권한부여 타입 변경 password -> refresh_token
+//                    .build();
 //
-//            SimpleAuthorityMapper authorityMapper = new SimpleAuthorityMapper();
-//            authorityMapper.setPrefix("SYSTEM_"); // 권한부여 클라이언트에서 가져온 권한에 SYSTEM_ 접두어 붙이기
-//            Set<GrantedAuthority> grantedAuthorities = authorityMapper.mapAuthorities(oAuth2User.getAuthorities()); // 최종사용자 권한 가져오기
+//            OAuth2AuthorizedClient oAuth2AuthorizedClient =
+//                    new OAuth2AuthorizedClient(
+//                            clientRegistration,
+//                            authorizedClient.getPrincipalName(),
+//                            authorizedClient.getAccessToken(),
+//                            authorizedClient.getRefreshToken()
+//                    );
 //
-//            OAuth2AuthenticationToken oAuth2AuthenticationToken =
-//                    new OAuth2AuthenticationToken(oAuth2User, grantedAuthorities, authorizedClient.getClientRegistration().getRegistrationId());// 최종사용자 인증객체 만들기
+//            OAuth2AuthorizeRequest oAuth2AuthorizeRequest = OAuth2AuthorizeRequest
+//                    .withAuthorizedClient(oAuth2AuthorizedClient)
+//                    .principal(authentication)
+//                    .attribute(HttpServletRequest.class.getName(), request)
+//                    .attribute(HttpServletResponse.class.getName(), response)
+//                    .build();
 //
-//            SecurityContextHolder.getContext().setAuthentication(oAuth2AuthenticationToken); // 최종사용자 인증객체 저장하기
-//
-//            model.addAttribute("oAuth2AuthenticationToken", oAuth2AuthenticationToken);
+//            authorizedClientManager.authorize(oAuth2AuthorizeRequest);
 //        }
-        if (authorizedClient != null)
-            model.addAttribute("oAuth2AuthenticationToken", authorizedClient.getAccessToken().getTokenValue());
+
+        if (authorizedClient != null) {
+            model.addAttribute("AccessToken", authorizedClient.getAccessToken().getTokenValue());
+            model.addAttribute("RefreshToken", authorizedClient.getRefreshToken().getTokenValue());
+        }
 
         return "home";
+    }
+
+    private boolean hasTokenExpired(OAuth2AccessToken accessToken) {
+        return this.clock.instant().isAfter(accessToken.getExpiresAt().minus(this.clockSkew));
     }
 
     @GetMapping("/logout")
